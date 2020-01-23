@@ -1,11 +1,10 @@
 import React,{Component} from 'react'
 import Card from 'react-bootstrap/Card'
 import Button from 'react-bootstrap/Button'
-import Axios from 'axios';
-import {Redirect} from "react-router-dom"
+import Axios from 'axios'
+import {Redirect,Link} from "react-router-dom"
 import logo from './Images/photonova.png'
 import {Col} from 'react-bootstrap'
-import {Form,FormControl} from 'react-bootstrap'
 import Post from './Post'
 export default class Home extends Component{
     constructor(props){
@@ -32,7 +31,7 @@ export default class Home extends Component{
     }
     signout = () =>{
         if(typeof window !=='undefined') localStorage.removeItem('jwt');
-        return fetch('http://localhost:1827/signout',{
+        return fetch(`${process.env.REACT_APP_API_URL}/signout`,{
             method:"GET"
         })
         .then(response=>{
@@ -43,7 +42,7 @@ export default class Home extends Component{
         .catch(err => console.log(err));
     }
     componentDidMount(){
-        // Axios.get('http://localhost:1827/photos')
+        // Axios.get('http://localhost:1827/posts')
         // .then(res =>{
         //    this.setState({image: res.data});
         //   })
@@ -64,16 +63,16 @@ export default class Home extends Component{
             <div className="container bg-dark head fixed-top" >
               <div className="row">
                 <div className="col-5">
-                  <a href="/"> <img src={logo} width="150" height="100" alt="alterate text" /></a>
+                  <a href="/home"> <img src={logo} width="150" height="100" alt="alterate text" /></a>
                   </div>
                   <Col lg={5}>
-                  <Form inline>
-      <FormControl type="text" placeholder="Search friends" className="mr-sm-2" />
-      <Button variant="outline-info bg-light"className='mt-sm-4 ml-sm-3'>Search</Button></Form>
+                  <Link  className='btn btn-light bg-info mt-4' to={'/users'}>Users</Link>
                   </Col>
-                  <Col className='text-light pt-4 pl-5 mt-5 ml-5'>
-                      @{this.isAuthenticated().user.userName}
-                  </Col>
+                  <a className='mt-5'>
+                      <Link to={`/users/${this.isAuthenticated().user._id}`} className='text-light'>
+                      {`@${this.isAuthenticated().user.userName}'s profile`}
+                      </Link>
+                  </a>
               </div>
           </div>
             </header>
@@ -104,18 +103,21 @@ export default class Home extends Component{
                 </div>
             </body>
             <footer className="container bg-dark foot fixed-bottom">
-                {/* <div > */}
-                    {/* <div className="row"> */}
-                      ? <button type='submit' className='btn btn-light bg-info mt-4' 
+                <div >
+                    <div className="row">
+                        <div className='col'>
+                            <ul style={{'listStyleType':'none','display':'inline'}}>
+                                <li> <button type='submit' className='btn btn-light bg-info m-2' 
                       onClick={()=>this.setState({postModalShow:true})}>Add Photo</button>
-                      <Post show={this.state.postModalShow} onHide={postModalClose} />
-                       <button type='submit' className='btn btn-light bg-info mt-4'>View Profile</button>
-                       {/* </div> */}
-                       {/* <div className='col-1'> */}
-                       <button type='submit' className='btn btn-light bg-info m-4' onClick={this.signout} style={{"float":'right'}}>Sign Out</button>
-                       {/* </div> */}
-                    {/* </div> */}
-                {/* </div> */}
+                      <Post show={this.state.postModalShow} onHide={postModalClose} /></li>
+                            <li>
+                                
+                      <button type='submit' style={{"float":"right"}}  className='btn btn-light bg-info m-2' onClick={this.signout} style={{"float":'right'}}>Sign Out</button>
+                            </li>
+                            </ul>
+                        </div>
+                       </div>
+                 </div>
             </footer>
         </div>
      }

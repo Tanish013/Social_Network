@@ -1,59 +1,99 @@
 import React,{Component} from 'react'
 import {Modal,Button,Row,Col,Form} from 'react-bootstrap'
+import {Redirect} from 'react-router-dom';
 export default class Post extends Component{
-    constructor(props){
-        super(props)
+    constructor(){
+        super()
         this.state= {
             photo:'',
             title:'',
             body:'',
-            error:''
-        }
+            error:'',
+            user:{},
+            fileSize:0,
+            loading:false
+        };
     }
-    isAuthenticated = () => {
-        if(typeof window == 'undefined')
-        return false;
-        if(localStorage.getItem('jwt')){
-            return JSON.parse(localStorage.getItem('jwt'))
-        }
-        else
-        return false
+    componentDidMount() {
+        this.postData = new FormData();
+        this.setState({user:this.isAuthenticated().user})
     }
+    isValid = () => {
+        const { title, body, fileSize } = this.state;
+        if (fileSize > 100000) {
+            this.setState({
+                error: "File size should be less than 100kb",
+                loading: false
+            });
+            return false;
+        }
+        if (title.length === 0 || body.length === 0) {
+            this.setState({ error: "All fields are required", loading: false });
+            return false;
+        }
+        return true;
+    };
+        isAuthenticated = () => {
+        if (typeof window == 'undefined') {
+            return false;
+        }
+    
+        if (localStorage.getItem('jwt')) {
+            return JSON.parse(localStorage.getItem('jwt'));
+        } else {
+            return false;
+        }
+    };
+    
     handleChange = (name) =>(event) => {
         this.setState({error:''})
-        this.setState({[name]:event.target.value})
+        const value =
+        name === "photo" ? event.target.files[0] : event.target.value;
+
+    const fileSize = name === "photo" ? event.target.files[0].size : 0;
+    this.postData.set(name, value);
+    this.setState({ [name]: value, fileSize });
 
     }
-    clickSubmit = (event) => {
+    clickSubmit = event => {
         event.preventDefault();
-        const userId = this.isAuthenticated().user._id
-        const token = this.isAuthenticated().user.token
-        const {photo,title,body} = this.state
-        const Post = {
-            photo,
-            title,
-            body
+        this.setState({ loading: true });
+
+        if (this.isValid()) {
+            const userId = this.isAuthenticated().user._id;
+            const token = this.isAuthenticated().token;
+
+            this.create(userId, token, this.postData).then(data => {
+                if (data.error) this.setState({ error: data.error });
+                else {
+                    // this.setState({
+                    //     loading: false,
+                    //     title: "",
+                    //     body: "",
+                    //     redirectToProfile: true
+                    // });
+                    console.log("new",data);
+                }
+            });
         }
-        this.newPost(Post,userId,token)
-    }
-    newPost = (Post,userId,token) => {
-        fetch(`http://localhost:1827/post/new/${userId}`,{
-            method:"POST",
-            headers:{
-                Accept:'application/json',
-                Authorization: `Bearer ${token}`
-            },
-            body:Post
-        })
-        .then(response => {
-            return response.json()
-        })
-        .catch(err => console.log(err))
-        
-    }
+        }
+        create = (userId, token, post) => {
+            return fetch(`${process.env.REACT_APP_API_URL}/post/new/${userId}`, {
+                method: "POST",
+                headers: {
+                    Accept: "application/json",
+                    Authorization: `Bearer ${token}`
+                },
+                body: post
+            })
+                .then(response => {
+                    return response.json();
+                })
+                .catch(err => console.log(err));
+        };
     
     render(){
-        const {photo,title,body} = this.state
+        const {title,body,photo,user,error,loading} = this.state
         return (<div>
             <Modal {...this.props} size='lg' id="ph" aria-labelledby='contained-modal-title-vcenter' centered> 
                 <Modal.Header  closeButton>
@@ -62,21 +102,26 @@ export default class Post extends Component{
                     </Modal.Title>
                 </Modal.Header>
                 <Modal.Body>
-                {/* <div className="alert alert-primary" style={{display:error?"":"none"}}>
+                <div className="alert alert-primary" style={{display:error?"":"none"}}>
                 {error}
-             </div> */}
+             </div>
+             {loading ? <div className='jumbotron text center'>
+                 <h2>Loading ....</h2>
+                 </div>: (
+                     ""
+                 )}
                     <Row>
                         <Col sm={8}>
                             <Form>
-                            <Form.Group controlId='photo'> 
+                            <Form.Group> 
                                 <Form.Label className='text-muted'>Photo</Form.Label>
                                 <Form.Control 
                                 onChange={this.handleChange("photo")}
                                 type='file'
+                                accept='image/*'
                                 placeholder='Select Photo'
-                                value={photo}
                                 /></Form.Group>
-                            <Form.Group controlId='title'>
+                            <Form.Group>
                                 <Form.Label className='text-muted'>Title</Form.Label>
                                 <Form.Control 
                                 onChange={this.handleChange("title")}
@@ -85,7 +130,7 @@ export default class Post extends Component{
                                 value={title}
                                 />
                             </Form.Group>
-                            <Form.Group controlId='body'>
+                            <Form.Group>
                                 <Form.Label className='text-muted'>Body</Form.Label>
                                 <Form.Control 
                                 onChange={this.handleChange("body")}

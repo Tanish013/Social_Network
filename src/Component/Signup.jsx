@@ -39,9 +39,8 @@ import {Modal,Button,Row,Col,Form} from 'react-bootstrap';
             });
         })
     }
-    
     signup = (User) =>{
-        return  fetch("http://localhost:1827/signup",{
+        return  fetch(`${process.env.REACT_APP_API_URL}/signup`,{
              method:"POST",
              headers:{
                  Accept:"application/json",
